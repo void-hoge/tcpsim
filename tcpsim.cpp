@@ -22,12 +22,12 @@ void mutexout(std::string str) {
 }
 
 template<class T>
-class mutqueue{
+class mutdeque{
 private:
 	std::deque<T> data;
 public:
 	std::mutex mtx;
-	mutqueue (){};
+	mutdeque (){};
 	void push_back(const T val) {
 		// std::lock_guard<std::mutex> lock(mtx);
 		data.push_back(val);
@@ -61,7 +61,7 @@ public:
 	}
 };
 
-void sender(mutqueue<int>& netstack, mutqueue<int>& ack, const int max) {
+void sender(mutdeque<int>& netstack, mutdeque<int>& ack, const int max) {
 	int lastsent = -1;
 	int w_size = 1;
 	int w_limit = 100;
@@ -121,20 +121,9 @@ void sender(mutqueue<int>& netstack, mutqueue<int>& ack, const int max) {
 	// std::cout << "sender end" << '\n';
 }
 
-// 重複ackパケットに関する質問。
-// ネットワークからの情報はハードウェア上では待ち行列(キュー)に格納されている。
-// ウィンドウサイズが4以上の場合、そのキュー上に4つのackが積まれる。
-// ここでは、(ack2,ack2,ack2,ack3)(この順でpopされる)が積まれているとする。
-// 222を読んだ時点で、重複ackパケットにより3を再送するのか、それとも3まで読んで再送しないのか。
-// 予想としては、おそらく222を読んだ時点で再送される。
-// なぜなら、ハードウェアのキューにはさまざまな送信ホストのパケットが山積みになっており、同一送信ホストのパケットがそれ以上存在するかどうかを検証するのは時間がかかるため。
-
-// 0番目のパケットが消失したら、ackとして何が帰ってくる?
-// -1?
-
-void reciever(mutqueue<int>& netstack, mutqueue<int>& ack, const int max) {
+void reciever(mutdeque<int>& netstack, mutdeque<int>& ack, const int max) {
 	int lastrecieved = -1;
-	mutqueue<int> rcvd;
+	mutdeque<int> rcvd;
 	while (true) {
 		netstack.mtx.lock();
 		// mtx.lock();
@@ -177,8 +166,8 @@ void reciever(mutqueue<int>& netstack, mutqueue<int>& ack, const int max) {
 
 int main() {
 	const int max = 1000; // 0-1000までの整数をパケットとする
-	mutqueue<int> netstack;
-	mutqueue<int> ack;
+	mutdeque<int> netstack;
+	mutdeque<int> ack;
 	std::thread send([&]{sender(netstack, ack, max);});
 	std::thread recieve([&]{reciever(netstack, ack, max);});
 	send.join();
