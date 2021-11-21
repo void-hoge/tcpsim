@@ -88,7 +88,7 @@ void sender(mutdeque<int>& netstack, mutdeque<int>& ack, const int max) {
 				count = 0;
 			}
 			lastack = rcvd;
-			if (count == 2) {
+			if (count == 3) {
 				netstack.push_back(rcvd+1);
 				// std::cout << "sender: pkt" << rcvd+1 << " resent" << '\n';
 				mutexout("sender: pkt"+std::to_string(rcvd+1)+" resent");
